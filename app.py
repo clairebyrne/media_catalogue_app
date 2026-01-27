@@ -1,55 +1,123 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import os 
-from dotenv import load_dotenv
 
-st.title('Uber pickups in NYC')
-st.logo('resources/tmdb_logo.png', size='small')
-
-def get_variable(variable_name):
-    """ 
-    Retrieves the value of a variable from a .env file, given variable name
-    Returns: variable value
-    """
-    # get env variables from .env file
-    load_dotenv()
-    # extract variable
-    value = os.environ.get(variable_name)
-    return value
-
-tmdb_cred = get_variable('tmbd_credit')
-
-st.text(tmdb_cred)
-st.text('(or at least it will when its not the streamlit placeholder)')
-
-DATE_COLUMN = 'date/time'
-DATA_URL = ('https://s3-us-west-2.amazonaws.com/'
-            'streamlit-demo-data/uber-raw-data-sep14.csv.gz')
+st.set_page_config(
+    page_title="My Movie Library",
+    layout="wide"
+)
 
 @st.cache_data
-def load_data(nrows):
-    data = pd.read_csv(DATA_URL, nrows=nrows)
-    lowercase = lambda x: str(x).lower()
-    data.rename(lowercase, axis='columns', inplace=True)
-    data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN])
-    return data
+def load_data(path: str) -> pd.DataFrame:
+    df = pd.read_csv(path)
 
-data_load_state = st.text('Loading data...')
-data = load_data(10000)
-data_load_state.text("Done! (using st.cache_data)")
+    text_cols = ["name", "overview", "cast"]
+    for col in text_cols:
+        df[col] = df[col].astype(str)
 
-if st.checkbox('Show raw data'):
-    st.subheader('Raw data')
-    st.write(data)
+    df["release_year"] = pd.to_datetime(
+        df["release_date"], errors="coerce"
+    ).dt.year
 
-st.subheader('Number of pickups by hour')
-hist_values = np.histogram(data[DATE_COLUMN].dt.hour, bins=24, range=(0,24))[0]
-st.bar_chart(hist_values)
+    return df
 
-# Some number in the range 0-23
-hour_to_filter = st.slider('hour', 0, 23, 17)
-filtered_data = data[data[DATE_COLUMN].dt.hour == hour_to_filter]
+@st.dialog("Movie details")
+def show_movie_details(movie):
+    st.image(movie["poster"], width=250)
 
-st.subheader('Map of all pickups at %s:00' % hour_to_filter)
-st.map(filtered_data)
+    st.markdown(f"**Release year:** {int(movie['release_year'])}")
+    st.markdown(f"**Genre:** {movie['genre']}")
+    st.markdown(f"**Rating:** ⭐ {movie['vote_average']}")
+
+    st.markdown("### Overview")
+    st.write(movie["overview"])
+
+    if movie["cast"]:
+        st.markdown(f"**Cast:** {movie['cast']}")
+
+    if movie["trailer"]!="No trailer available":
+        st.video(movie["trailer"])
+
+
+# ---------- Load data ----------
+df = load_data("media_df.csv")
+
+st.title("🎬 Movie Library")
+
+# ---------- Sidebar filters ----------
+st.sidebar.header("Filters")
+
+search_text = st.sidebar.text_input(
+    "Search title / overview / cast"
+)
+
+min_rating = st.sidebar.slider(
+    "Minimum rating",
+    min_value=0.0,
+    max_value=10.0,
+    value=0.0,
+    step=0.5
+)
+
+years = df["release_year"].dropna().astype(int)
+year_range = st.sidebar.slider(
+    "Release year",
+    int(years.min()),
+    int(years.max()),
+    (int(years.min()), int(years.max()))
+)
+
+# ---------- Filtering logic ----------
+filtered = df.copy()
+
+if search_text:
+    s = search_text.lower()
+    filtered = filtered[
+        filtered["name"].str.lower().str.contains(s, na=False)
+        | filtered["overview"].str.lower().str.contains(s, na=False)
+        | filtered["cast"].str.lower().str.contains(s, na=False)
+    ]
+
+filtered = filtered[
+    (filtered["vote_average"] >= min_rating)
+    & (filtered["release_year"] >= year_range[0])
+    & (filtered["release_year"] <= year_range[1])
+]
+
+st.caption(f"{len(filtered)} movies")
+
+# ---------- Grid display ----------
+cols_per_row = 4
+rows = [
+    filtered.iloc[i:i + cols_per_row]
+    for i in range(0, len(filtered), cols_per_row)
+]
+
+for row in rows:
+    cols = st.columns(cols_per_row)
+    for col, (_, movie) in zip(cols, row.iterrows()):
+        with col:
+            if pd.notna(movie["poster"]):
+                st.image(movie["poster"], use_container_width=True)
+
+            st.markdown(
+                f"**{movie['name']}** ({int(movie['release_year']) if pd.notna(movie['release_year']) else '—'})"
+            )
+            st.caption(
+                f"⭐ {movie['vote_average']}  ·  {movie['genre']}"
+            )
+
+            if st.button("Details", key=f"details_{movie.name}"):
+                show_movie_details(movie)
+
+
+
+            # with st.expander("Details"):
+            #     st.write(movie["overview"])
+
+            #     if pd.notna(movie["cast"]):
+            #         st.markdown(f"**Cast:** {movie['cast']}")
+
+            #     if pd.notna(movie["trailer"]):
+            #         st.markdown(
+            #             f"[▶ Watch trailer]({movie['trailer']})"
+            #         )
