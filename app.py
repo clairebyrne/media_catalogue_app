@@ -5,6 +5,8 @@ st.set_page_config(
     page_title="My Movie Library",
     layout="wide"
 )
+st.logo('resources/tmdb_logo.png', size='small')
+st.text('This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.')
 
 @st.cache_data
 def load_data(path: str) -> pd.DataFrame:
