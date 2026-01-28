@@ -12,13 +12,15 @@ st.text('This application uses TMDB and the TMDB APIs but is not endorsed, certi
 def load_data(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
 
-    text_cols = ["name", "overview", "cast"]
+    text_cols = ["name", "overview", "cast_top5", "genre"]
     for col in text_cols:
         df[col] = df[col].astype(str)
 
     df["release_year"] = pd.to_datetime(
         df["release_date"], errors="coerce"
     ).dt.year
+
+    df = df.drop_duplicates()
 
     return df
 
@@ -33,15 +35,27 @@ def show_movie_details(movie):
     st.markdown("### Overview")
     st.write(movie["overview"])
 
-    if movie["cast"]:
-        st.markdown(f"**Cast:** {movie['cast']}")
+    if movie["cast_top5"]:
+        st.markdown(f"**Cast:** {movie['cast_top5']}")
 
     if movie["trailer"]!="No trailer available":
         st.video(movie["trailer"])
 
+def extract_genres(df: pd.DataFrame) -> list[str]:
+    genres = (
+        df["genre"]
+        .dropna()
+        .str.split(",")
+        .explode()
+        .str.strip()
+        .unique()
+    )
+    return sorted(genres)
 
 # ---------- Load data ----------
 df = load_data("media_df.csv")
+# get list of all genres
+all_genres = extract_genres(df)
 
 st.title("🎬 Movie Library")
 
@@ -68,6 +82,13 @@ year_range = st.sidebar.slider(
     (int(years.min()), int(years.max()))
 )
 
+selected_genres = st.sidebar.multiselect(
+    "Genres",
+    options=all_genres,
+    default=[],
+    help="Show movies matching any selected genre"
+)
+
 # ---------- Filtering logic ----------
 filtered = df.copy()
 
@@ -76,7 +97,7 @@ if search_text:
     filtered = filtered[
         filtered["name"].str.lower().str.contains(s, na=False)
         | filtered["overview"].str.lower().str.contains(s, na=False)
-        | filtered["cast"].str.lower().str.contains(s, na=False)
+        | filtered["cast_top5"].str.lower().str.contains(s, na=False)
     ]
 
 filtered = filtered[
@@ -84,6 +105,16 @@ filtered = filtered[
     & (filtered["release_year"] >= year_range[0])
     & (filtered["release_year"] <= year_range[1])
 ]
+
+st.sidebar.subheader("🎭 Genre")
+if selected_genres:
+    filtered = filtered[
+        filtered["genre"].apply(
+            lambda g: any(
+                genre in g for genre in selected_genres
+            )
+        )
+    ]
 
 st.caption(f"{len(filtered)} movies")
 
@@ -110,16 +141,3 @@ for row in rows:
 
             if st.button("Details", key=f"details_{movie.name}"):
                 show_movie_details(movie)
-
-
-
-            # with st.expander("Details"):
-            #     st.write(movie["overview"])
-
-            #     if pd.notna(movie["cast"]):
-            #         st.markdown(f"**Cast:** {movie['cast']}")
-
-            #     if pd.notna(movie["trailer"]):
-            #         st.markdown(
-            #             f"[▶ Watch trailer]({movie['trailer']})"
-            #         )
