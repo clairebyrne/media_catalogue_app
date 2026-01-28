@@ -31,7 +31,7 @@ def show_movie_details(movie):
     st.markdown(f"**Release year:** {int(movie['release_year'])}")
     st.markdown(f"**Genre:** {movie['genre']}")
     st.markdown(f"**Rating:** ⭐ {movie['vote_average']}")
-    st.markdown(f"**Find it:** {movie['location']}")
+    st.markdown(f"**Find it in:** :file_folder: {movie['location']}")
 
     st.markdown("### Overview")
     st.write(movie["overview"])
