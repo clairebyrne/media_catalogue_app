@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import random
 
 st.set_page_config(
     page_title="My Movie Library",
@@ -63,6 +64,8 @@ st.title("🎬 Movie Library")
 # ---------- Sidebar filters ----------
 st.sidebar.header("Filters")
 
+pick_random = st.sidebar.button("🎲 Pick something for me")
+
 search_text = st.sidebar.text_input(
     "Search title / overview / cast"
 )
@@ -116,7 +119,37 @@ if selected_genres:
         )
     ]
 
+if pick_random:
+    st.session_state["random_pick"] = (
+        filtered.sample(1).iloc[0]
+        if not filtered.empty
+        else None
+    )
+
 st.caption(f"{len(filtered)} movies")
+
+# ---------- random select display ---------- 
+
+if "random_pick" in st.session_state and st.session_state["random_pick"] is not None:
+    movie = st.session_state["random_pick"]
+
+    st.markdown("## 🎬 Tonight’s pick")
+    cols = st.columns([1, 3])
+
+    with cols[0]:
+        st.image(movie["poster"], use_container_width=True)
+
+    with cols[1]:
+        st.markdown(f"### {movie['name']} ({int(movie['release_year'])})")
+        st.markdown(f"⭐ {movie['vote_average']} · {movie['genre']}")
+        st.write(movie["overview"])
+        st.write(movie['cast_top5'])
+        
+        if movie["trailer"]!="No trailer available":
+            st.video(movie["trailer"])
+
+    st.divider()
+
 
 # ---------- Grid display ----------
 cols_per_row = 4
