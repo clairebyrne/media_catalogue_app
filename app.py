@@ -31,6 +31,7 @@ def show_movie_details(movie):
     st.markdown(f"**Release year:** {int(movie['release_year'])}")
     st.markdown(f"**Genre:** {movie['genre']}")
     st.markdown(f"**Rating:** ⭐ {movie['vote_average']}")
+    st.markdown(f"**Find it:** {movie['location']}")
 
     st.markdown("### Overview")
     st.write(movie["overview"])
@@ -81,7 +82,7 @@ year_range = st.sidebar.slider(
     int(years.max()),
     (int(years.min()), int(years.max()))
 )
-
+st.sidebar.subheader("🎭 Genre")
 selected_genres = st.sidebar.multiselect(
     "Genres",
     options=all_genres,
@@ -106,7 +107,6 @@ filtered = filtered[
     & (filtered["release_year"] <= year_range[1])
 ]
 
-st.sidebar.subheader("🎭 Genre")
 if selected_genres:
     filtered = filtered[
         filtered["genre"].apply(
