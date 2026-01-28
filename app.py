@@ -84,7 +84,7 @@ year_range = st.sidebar.slider(
 )
 st.sidebar.subheader("🎭 Genre")
 selected_genres = st.sidebar.multiselect(
-    "Genres",
+    "",
     options=all_genres,
     default=[],
     help="Show movies matching any selected genre"
