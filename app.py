@@ -106,6 +106,7 @@ if search_text:
         filtered["name"].str.lower().str.contains(s, na=False)
         | filtered["overview"].str.lower().str.contains(s, na=False)
         | filtered["cast_top5"].str.lower().str.contains(s, na=False)
+        | filtered["director"].str.lower().str.contains(s, na=False)
     ]
 
 filtered = filtered[
