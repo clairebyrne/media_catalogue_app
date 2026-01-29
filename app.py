@@ -3,11 +3,9 @@ import pandas as pd
 import random
 
 st.set_page_config(
-    page_title="My Movie Library",
+    page_title="All the films ... ",
     layout="wide"
 )
-st.logo('resources/tmdb_logo.png', size='small')
-st.text('This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.')
 
 @st.cache_data
 def load_data(path: str) -> pd.DataFrame:
@@ -21,13 +19,14 @@ def load_data(path: str) -> pd.DataFrame:
         df["release_date"], errors="coerce"
     ).dt.year
 
-    df = df.drop_duplicates()
+    df = df.drop_duplicates(['location', 'name', 'release_date', 'overview','genre', 'vote_average', 'vote_count', 'popularity','cast_top5', 'trailer', 'poster'])
 
     return df
 
 @st.dialog("Movie details")
 def show_movie_details(movie):
-    st.image(movie["poster"], width=250)
+    if movie["poster"]!= 'No poster available':
+        st.image(movie["poster"], width=250)
 
     st.markdown(f"**Release year:** {int(movie['release_year'])}")
     st.markdown(f"**Genre:** {movie['genre']}")
@@ -59,7 +58,7 @@ df = load_data("media_df.csv")
 # get list of all genres
 all_genres = extract_genres(df)
 
-st.title("🎬 Movie Library")
+st.title("🎬 The films")
 
 # ---------- Sidebar filters ----------
 st.sidebar.header("Filters")
@@ -92,6 +91,9 @@ selected_genres = st.sidebar.multiselect(
     default=[],
     help="Show movies matching any selected genre"
 )
+
+st.sidebar.text('This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.', )
+st.sidebar.image('resources/tmdb_logo.png', width=100)
 
 # ---------- Filtering logic ----------
 filtered = df.copy()
@@ -137,11 +139,13 @@ if "random_pick" in st.session_state and st.session_state["random_pick"] is not 
     cols = st.columns([1, 3])
 
     with cols[0]:
-        st.image(movie["poster"], use_container_width=True)
+        if movie["poster"]!= 'No poster available':
+            st.image(movie["poster"], use_container_width=True)
 
     with cols[1]:
         st.markdown(f"### {movie['name']} ({int(movie['release_year'])})")
         st.markdown(f"⭐ {movie['vote_average']} · {movie['genre']}")
+        st.markdown(f"**Find it in:** :file_folder: {movie['location']}")
         st.write(movie["overview"])
         st.write(movie['cast_top5'])
         
@@ -162,7 +166,7 @@ for row in rows:
     cols = st.columns(cols_per_row)
     for col, (_, movie) in zip(cols, row.iterrows()):
         with col:
-            if pd.notna(movie["poster"]):
+            if movie["poster"]!= 'No poster available':
                 st.image(movie["poster"], use_container_width=True)
 
             st.markdown(
