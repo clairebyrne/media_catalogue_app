@@ -1,0 +1,5 @@
+.env
+app1.py
+doodles.py
+media_df_tester.csv
+__pycache__/media_lister.cpython-311.pyc
