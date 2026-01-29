@@ -5,7 +5,7 @@ from PTN import parse # parse-torrent-name
 from dotenv import load_dotenv
 import tmdbsimple as tmdb
 
-base_path_films = r'D:/Movies/mam'
+base_path_films = r'D:/Movies'
 
 def get_file_types(dir):
     extensions = [] 
