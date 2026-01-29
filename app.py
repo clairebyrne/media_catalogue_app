@@ -30,6 +30,8 @@ def show_movie_details(movie):
 
     st.markdown(f"**Release year:** {int(movie['release_year'])}")
     st.markdown(f"**Genre:** {movie['genre']}")
+    st.markdown(f"**Director:** {movie['director']}")
+    st.markdown(f"**Runtime:** {movie['runtime']}")
     st.markdown(f"**Rating:** ⭐ {movie['vote_average']}")
     st.markdown(f"**Find it in:** :file_folder: {movie['location']}")
 
@@ -147,7 +149,9 @@ if "random_pick" in st.session_state and st.session_state["random_pick"] is not 
         st.markdown(f"⭐ {movie['vote_average']} · {movie['genre']}")
         st.markdown(f"**Find it in:** :file_folder: {movie['location']}")
         st.write(movie["overview"])
-        st.write(movie['cast_top5'])
+        st.write(f"**Cast**: {movie['cast_top5']}")
+        st.write(f"**Director:** {movie['director']}")
+        st.write(f"**Runtime:** {movie['runtime']}")
         
         if movie["trailer"]!="No trailer available":
             st.video(movie["trailer"])
@@ -173,8 +177,9 @@ for row in rows:
                 f"**{movie['name']}** ({int(movie['release_year']) if pd.notna(movie['release_year']) else '—'})"
             )
             st.caption(
-                f"⭐ {movie['vote_average']}  ·  {movie['genre']}"
+                f"⭐ {movie['vote_average']}  ·  {movie['genre']}  ·  {movie['runtime']}"
             )
+            st.caption(f"{movie['director']}")
 
             if st.button("Details", key=f"details_{movie.name}"):
                 show_movie_details(movie)

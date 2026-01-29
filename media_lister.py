@@ -5,7 +5,7 @@ from PTN import parse # parse-torrent-name
 from dotenv import load_dotenv
 import tmdbsimple as tmdb
 
-base_path_films = r'D:/Movies'
+base_path_films = r'D:/Movies/mam'
 
 def get_file_types(dir):
     extensions = [] 
@@ -56,7 +56,7 @@ def get_variable(variable_name):
 # review list of extensions and decide what's relevant. Then update search_for_types tuple...
 search_for_types = ('.avi', '.mp4', '.mkv', '.divx', '.m4v', '.wmv', '.mov', '.mpg')
 # create dataframe to hold all info. filename and name from the files, everything else from TMDb API
-media_df = pd.DataFrame(columns=('filename', 'location', 'name', 'release_date', 'overview','genre', 'vote_average', 'vote_count', 'popularity','cast_top5', 'trailer', 'poster'))
+media_df = pd.DataFrame(columns=('filename', 'location', 'name', 'release_date', 'overview','genre', 'vote_average', 'vote_count', 'popularity','cast_top5', 'trailer', 'poster', 'director', 'runtime'))
 
 # get the list of files
 file_list, dir_list = files_to_list(base_path_films, search_for_types)
@@ -72,7 +72,9 @@ popularity = []
 cast_list = []
 trailer = [] 
 poster = []
-genres = []
+genres_lst = []
+directors_lst = []
+runtimes = []
 
 no_api_result = []
 
@@ -88,6 +90,7 @@ search = tmdb.Search()
 for file, dir in zip(file_list, dir_list):
     # get name
     name = parse(file)['title']
+    print(name)
     # search for name
     response = search.movie(query=name)
     # print(response)
@@ -120,22 +123,27 @@ for file, dir in zip(file_list, dir_list):
         for cast in credits['cast'][0:5]:
                 top5_cast = top5_cast + f"{cast['name']} as {cast['character']}\n"
         cast_list.append(top5_cast)
+        # directors
         movie = tmdb.Movies(pick['id'])
-        response = movie.info()
-        this_genres = ''
-        for i in range(len(movie.genres)):
-            if i == 0:
-                this_genres = movie.genres[i]['name']
-            else:
-                this_genres = this_genres + ', ' + movie.genres[i]['name']
-        genres.append(this_genres)
+        response = movie.credits()
+        directors_dtls = [credit['name'] for credit in movie.crew if credit["job"] == "Director"]
+        directors = ', '.join(directors_dtls)
+        directors_lst.append(directors)
+        # runtime and genres
+        movie = tmdb.Movies(pick['id'])
+        mov_info = movie.info()
+        runtime = f'{movie.runtime} min'
+        runtimes.append(runtime)
+        genres = movie.genres 
+        gnrs = [genre['name'] for genre in movie.genres]
+        genre =  ', '.join(gnrs)
+        genres_lst.append(genre)
     else:
         no_api_result.append(name)
 
 for i in no_api_result:
     print('Couldn\'t find:')
     print(i)
-
 
 # add to dataframe
 media_df['filename'] = files_list
@@ -147,9 +155,11 @@ media_df['vote_count'] = vote_count
 media_df['popularity'] = popularity
 media_df['trailer'] =  trailer
 media_df['poster'] = poster
-media_df['genre'] = genres
+media_df['genre'] = genres_lst
 media_df['cast_top5'] = cast_list
 media_df['location'] = directory
+media_df['director'] = directors_lst
+media_df['runtime'] = runtimes
 
 #save to csv
 media_df.to_csv('media_df.csv')
