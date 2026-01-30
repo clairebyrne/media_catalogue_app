@@ -68,7 +68,7 @@ st.sidebar.header("Filters")
 pick_random = st.sidebar.button("🎲 Pick something for me")
 
 search_text = st.sidebar.text_input(
-    "Search title / overview / cast"
+    "Search title / overview / cast / director"
 )
 
 min_rating = st.sidebar.slider(
